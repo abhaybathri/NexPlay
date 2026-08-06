@@ -5,6 +5,8 @@ import { Signup } from "./Signup.jsx"
 import { UploadVideo } from "./uploadVideo.jsx"
 import { UploadTweet } from "./UploadTweet.jsx"
 import HomeTweet from "./HomeTweet.jsx"
+import { WatchVideo } from "./WatchVideo.jsx"
+import { Channel } from "./Channel.jsx"
 export {
     AllVideos,
     Home,
@@ -12,5 +14,7 @@ export {
     Signup,
     UploadVideo,
     UploadTweet,
-    HomeTweet
+    HomeTweet,
+    WatchVideo,
+    Channel
 }

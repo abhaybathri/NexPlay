@@ -3,13 +3,15 @@ import { api } from "../api/axios.js"
 import { TweetCard } from "../components/index.js";
 
 export default function AllTweets(){
-    const [tweets,setTweet] = useState([])
+    const [tweet,setTweet] = useState([])
    useEffect(() => {
     async function getTweets() {
         try {
             const response = await api.get("/tweet/get-tweets");
-            console.log(response.data.data);
-            setTweet(response.data.data)
+            
+            
+            setTweet(response.data.data.docs)
+            
         } catch (error) {
             console.log(error);
         }
@@ -17,18 +19,22 @@ export default function AllTweets(){
 
     getTweets();
 }, []);
+
+
     return(
-        <div>
+        <div className="p-5 flex flex-col gap-6">
             {
-                tweets.map((tweet)=>{
+                tweet.map((tweet)=>(
                     <TweetCard 
-                    key={tweet.id}
+                    key={tweet._id}
                     tweetId={tweet._id}
                     content={tweet.content}
                     user={tweet.owner}
                     uploadedAt = {tweet.createdAt}
+                    initialLikes={tweet.likesCount}
                     />
-                })
+                    //todo also add toggle subscribe button to each card 
+                ))
             }
         </div>
     )

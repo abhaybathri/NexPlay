@@ -5,7 +5,7 @@ import App from './App.jsx'
 import { Provider } from 'react-redux'
 import store from './store/store.js'
 import { BrowserRouter, createBrowserRouter, RouterProvider } from 'react-router-dom'
-import { Home, HomeTweet, Login, Signup, UploadTweet, UploadVideo } from './pages/index.js'
+import { Channel, Home, HomeTweet, Login, Signup, UploadTweet, UploadVideo, WatchVideo } from './pages/index.js'
 
 const router = createBrowserRouter([
   {
@@ -40,6 +40,16 @@ const router = createBrowserRouter([
         element:<HomeTweet />
 
       }
+      ,
+      {
+        path:"/watch/:videoId",
+        element:<WatchVideo />
+      }
+      ,
+      {
+        path:"/channel/:username",
+        element:<Channel />
+      }
       
 
     ]
@@ -48,10 +58,10 @@ const router = createBrowserRouter([
 ])
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
+  
     <Provider store={store}>
     <RouterProvider router={router} />
 
     </Provider>
-  </StrictMode>,
+  
 )

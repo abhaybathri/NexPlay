@@ -13,7 +13,7 @@ export default function CategoryTabs() {
   ];
 
   return (
-    <div className="sticky top-16 z-30 bg-white dark:bg-zinc-950 border-b dark:border-zinc-800">
+    <div className="top-16 z-30 bg-white dark:bg-zinc-950 border-b dark:border-zinc-800">
       <div className="flex gap-4 px-6 py-3">
         {tabs.map((tab) => (
           <NavLink

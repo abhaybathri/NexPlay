@@ -19,7 +19,6 @@ function App() {
         try {
             const { data } = await api.get("/users/user");
 
-            console.log("Success:", data);
 
             dispatch(login(data.data));
         } catch (err) {

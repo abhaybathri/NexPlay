@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Tweet } from "../models/tweet.model.js";
 import { ApiError } from "../utility/ApiError.js";
 import { ApiResponse } from "../utility/ApiResponse.js";
@@ -67,12 +68,168 @@ const getUserserTweets = asyncHandler( async (req,res)=>{
     })
     if(!userTweets) throw new ApiError(404,"tweets not found")
 
+
     return res.status(200).json(new ApiResponse(200,userTweets),"tweets fetched successfully")
 
+
+})
+
+const getChannelTweets = asyncHandler( async(req,res)=>{
+    const { userId } = req.params;
+
+if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new ApiError(400, "Invalid user ID");
+}
+
+const tweets = await Tweet.aggregate([
+    {
+        $match: {
+            owner: new mongoose.Types.ObjectId(userId)
+        }
+    },
+    {
+        $lookup: {
+            from: "users",
+            localField: "owner",
+            foreignField: "_id",
+            as: "owner",
+            pipeline: [
+                {
+                    $project: {
+                        fullname: 1,
+                        username: 1,
+                        avatar: 1
+                    }
+                }
+            ]
+        }
+    },
+    {
+        $lookup: {
+            from: "likes",
+            localField: "_id",
+            foreignField: "tweet",
+            as: "likes"
+        }
+    },
+    {
+        $addFields: {
+            owner: {
+                $first: "$owner"
+            },
+            likesCount: {
+                $size: "$likes"
+            }
+        }
+    },
+    {
+        $project: {
+            likes: 0
+        }
+    }
+]);
+
+return res
+    .status(200)
+    .json(new ApiResponse(200, tweets, "Tweets fetched successfully"));
+
+})
+
+const getAllTweets = asyncHandler(async(req,res)=>{
+    const { page = 1, limit = 10, query, sortBy="createdAt", sortType="desc" } = req.query
+    const userId= req.user?._id
+
+    const pipeline = []
+ if(query){
+        pipeline.push(
+           {
+            $match:{
+                content:{
+                    $regex:query,
+                    $options: "i"
+                
+                }
+            }
+           }
+        )
+    } 
+    
+
+         const allowSortingFields = [
+    "createdAt",
+    "updatedAt",
+    "content"
+];
+
+    const finalSorting = allowSortingFields.includes(sortBy) ? sortBy : "createdAt"
+    pipeline.push(
+        {
+            $sort:{
+                [finalSorting]: sortType === "asc" ? 1 : -1
+            }
+        }
+    )
+const options = {
+        page:Number(page),
+        limit:Number(limit)
+
+    }
+
+    pipeline.push(
+        {
+    $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "tweet",
+        as: "likes"
+    }
+},
+{
+    $addFields: {
+        likesCount: {
+            $size: "$likes"
+        }
+    }
+}
+    )
+
+     pipeline.push(
+        {
+            $lookup:{
+                from:"users",
+                localField:"owner",
+                foreignField:"_id",
+                as:"owner",
+                
+
+            },
+            
+        },
+        {
+                $addFields:{
+                    owner:{
+                        $first:"$owner"
+                    }
+                }
+     }
+    )
+
+    
+    const tweets = await Tweet.aggregatePaginate(
+            Tweet.aggregate(pipeline),options
+        )
+   if(tweets.docs.length === 0) throw new ApiError(404,"Tweets not found")
+
+    return res.status(200).json(new ApiResponse(200,tweets,"tweets fetched successfully"))
+    
+
+    
 })
 export {
     createTweet,
     updateTweet,
     deleteTweet,
-    getUserserTweets
+    getUserserTweets,
+    getAllTweets,
+    getChannelTweets
 }

@@ -4,7 +4,7 @@ import { getChannelStatus, getChannelVideo } from "../controller/dashboard.contr
 
 const router = Router()
 router.use(verifyJwt)
-router.route('/get-channel-status').get(getChannelStatus)
-router.route('/get-videos').get(getChannelVideo)
+router.route('/get-channel-status/:userId').get(getChannelStatus)
+router.route('/get-videos/:userId').get(getChannelVideo)
 
 export default router

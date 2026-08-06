@@ -35,6 +35,9 @@ const getVideoComment = asyncHandler(async (req,res)=>{
             page:Number(page),
             limit:Number(limit)
         }
+        if (!mongoose.Types.ObjectId.isValid(videoId)) {
+  throw new ApiError(400, "Invalid video id");
+}
 
         const comments = await Comment.aggregatePaginate(
             Comment.aggregate(

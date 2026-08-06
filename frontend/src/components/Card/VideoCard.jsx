@@ -49,7 +49,7 @@ export default function VideoCard({
         </span>
 
       </div>
-
+      
       <div className="mt-3 flex gap-3">
 
         <img

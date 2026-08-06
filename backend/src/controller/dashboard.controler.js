@@ -7,7 +7,8 @@ import { ApiError } from "../utility/ApiError.js";
 import { ApiResponse } from "../utility/ApiResponse.js";
 
 const getChannelStatus = asyncHandler(async (req, res) => {
-    const userId = req.user?._id
+    const {userId} = req.params
+
 
     const totalVideosCount = await Video.countDocuments({
         owner: userId
@@ -72,7 +73,8 @@ const getChannelStatus = asyncHandler(async (req, res) => {
 })
 
 const getChannelVideo = asyncHandler(async (req,res)=>{
-    const userId = req.user._id
+
+    const {userId} = req.params
     if(!userId) throw new ApiError(400,"invalid request")
 
     const videos = await Video.aggregate([
@@ -91,7 +93,8 @@ const getChannelVideo = asyncHandler(async (req,res)=>{
                         $project:{
                             fullname:1,
                             username:1,
-                            email:1
+                            email:1,
+                            avatar:1
                         }
                     },
                 ]
@@ -105,7 +108,7 @@ const getChannelVideo = asyncHandler(async (req,res)=>{
                         }
                     }
     ])
-    if(!videos.length) throw new ApiError("videos not find for this channel")
+    if(!videos.length) throw new ApiError(400,"videos not find for this channel")
 
     return res.status(200).json(new ApiResponse(200,videos,"video fetched successfully"))
 })

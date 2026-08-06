@@ -161,16 +161,59 @@ const deleteVideo = asyncHandler( async(req,res)=>{
     return res.status(200).json(new ApiResponse(200,{},"video deleted successfully"))
 })
 
-const getVideoById = asyncHandler( async(req,res)=>{
-    const {videoId} = req.params
+const getVideoById = asyncHandler(async (req, res) => {
+    const { videoId } = req.params;
 
-    if(!videoId) throw new ApiError(400,"invalid video url")
+    if (!videoId) {
+        throw new ApiError(400, "Invalid video id");
+    }
 
-    const video = await Video.findById(videoId)
-    if(!video) throw new ApiError(404,"video not found in db")
+    const video = await Video.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(videoId),
+            },
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                pipeline: [
+                    {
+                        $project: {
+                            _id: 1,
+                            username: 1,
+                            fullName: 1,
+                            avatar: 1,
+                            coverImage: 1,
+                        },
+                    },
+                ],
+                as: "owner",
+            },
+        },
+        {
+            $addFields: {
+                owner: {
+                    $first: "$owner",
+                },
+            },
+        },
+    ]);
 
-    return res.status(200).json(new ApiResponse(200,video,"video fetched successfully"))
-})
+    if (video.length === 0) {
+        throw new ApiError(404, "Video not found");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            video[0],
+            "Video fetched successfully"
+        )
+    );
+});
 
 const updateVideo = asyncHandler(async(req,res)=>{
     const {videoId} = req.params
