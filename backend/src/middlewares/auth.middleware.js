@@ -4,25 +4,21 @@ import { asyncHandler } from "../utility/asyncHandler.js";
 import jwt from "jsonwebtoken";
 
 
-const verifyJwt = asyncHandler(async (req,res,next)=>{
+const verifyJwt = asyncHandler(async (req, res, next) => {
     try {
-        
         const accessToken = req.cookies.accessToken
-        if(!accessToken) throw new ApiError(404,'user not logged in')
-        
-        const decodedToken = jwt.verify(accessToken,process.env.ACCESS_TOKEN_SECRET)
-        if(!decodedToken) throw new ApiError(402,'invalid tokens')
-    
+        if (!accessToken) throw new ApiError(401, 'Please login to continue')
+
+        const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET)
+        if (!decodedToken) throw new ApiError(401, 'Invalid token')
+
         const user = await User.findById(decodedToken._id).select("-password -refreshToken")
-        if(!user) throw new ApiError(500, "user not found based on tokens")
-    
+        if (!user) throw new ApiError(401, "User not found")
+
         req.user = user
-    
-        next();
+        next()
     } catch (error) {
-        console.log(("error occure during verify jwt middlware"),error);
-        next(error);
-        
+        next(error)
     }
 })
 

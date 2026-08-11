@@ -15,7 +15,7 @@ const getUserChannelSubsribers = asyncHandler(async (req, res)=>{
     .populate("subscriber","username fullname avatar ")
     .select("-channel")
 
-    if(!subscribers.length) throw new ApiError(404,'subscribers not found')
+    if(!subscribers.length) return res.status(200).json(new ApiResponse(200, [], "No subscribers yet"))
 
     return res.status(200).json(
         new ApiResponse(200,subscribers,"subscribers fetched successfully")
@@ -31,7 +31,7 @@ const getSubscribedChannels = asyncHandler(async (req,res)=>{
     .populate("channel","fullname username avatar")
     .select("-subscriber")
 
-    if(!subscribedChannels.length) throw new ApiError(404,'subscribed channels not found')
+    if(!subscribedChannels.length) return res.status(200).json(new ApiResponse(200, [], "Not subscribed to any channels"))
 
     return res.status(200).json(new ApiResponse(200,subscribedChannels,"channels fetched successfully"))
 })

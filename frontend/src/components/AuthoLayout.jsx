@@ -1,23 +1,19 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
 
-
-
-export default function AuthLayout({children}){
+// Wraps routes that require authentication
+export default function AuthLayout({ children, requireAuth = true }) {
     const navigate = useNavigate()
-const [loading,setLoading] = useState(true)
-    const authstatus = useSelector((state)=> state.auth.status)
-    useEffect(()=>{
-        if(authstatus){
-                navigate('/')
+    const authStatus = useSelector(state => state.auth.status)
+
+    useEffect(() => {
+        if (requireAuth && !authStatus) {
+            navigate("/signin", { replace: true })
+        } else if (!requireAuth && authStatus) {
+            navigate("/", { replace: true })
         }
-        else{
-            navigate('/login')
-        }
-        setLoading(false);
-    },[
-authstatus, navigate
-    ])
-    return loading ? <h1>loading...</h1> : <>{children}</>
+    }, [authStatus, navigate, requireAuth])
+
+    return <>{children}</>
 }

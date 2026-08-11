@@ -69,7 +69,7 @@ const getUserserTweets = asyncHandler( async (req,res)=>{
     if(!userTweets) throw new ApiError(404,"tweets not found")
 
 
-    return res.status(200).json(new ApiResponse(200,userTweets),"tweets fetched successfully")
+    return res.status(200).json(new ApiResponse(200, userTweets, "tweets fetched successfully"))
 
 
 })
@@ -200,25 +200,32 @@ const options = {
                 localField:"owner",
                 foreignField:"_id",
                 as:"owner",
-                
-
-            },
-            
+                pipeline:[
+                    {
+                        $project:{
+                            _id:1,
+                            username:1,
+                            fullname:1,
+                            avatar:1
+                        }
+                    }
+                ]
+            }
         },
         {
-                $addFields:{
-                    owner:{
-                        $first:"$owner"
-                    }
+            $addFields:{
+                owner:{
+                    $first:"$owner"
                 }
-     }
+            }
+        }
     )
 
     
     const tweets = await Tweet.aggregatePaginate(
             Tweet.aggregate(pipeline),options
         )
-   if(tweets.docs.length === 0) throw new ApiError(404,"Tweets not found")
+   if(tweets.docs.length === 0) return res.status(200).json(new ApiResponse(200, { docs: [], totalDocs: 0 }, "No tweets found"))
 
     return res.status(200).json(new ApiResponse(200,tweets,"tweets fetched successfully"))
     

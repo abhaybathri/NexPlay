@@ -1,5 +1,6 @@
 import { asyncHandler } from "../utility/asyncHandler.js";
 import { Video } from "../models/video.models.js";
+import { User } from "../models/user.models.js";
 import mongoose from "mongoose";
 import { ApiError } from "../utility/ApiError.js";
 import { ApiResponse } from "../utility/ApiResponse.js";
@@ -36,14 +37,15 @@ const getAllVideos = asyncHandler(async (req,res)=>{
         )
     } 
 
-    // filter by user owner
-     if(userId){
-        if(!mongoose.Types.ObjectId.isValid(userId)) throw new ApiError(400,"Invalid user id")
+    // filter by user owner — only when explicitly requested via query param
+    const ownerFilter = req.query.userId
+    if(ownerFilter){
+        if(!mongoose.Types.ObjectId.isValid(ownerFilter)) throw new ApiError(400,"Invalid user id")
 
         pipeline.push(
             {
                 $match:{
-                    owner: new mongoose.Types.ObjectId(userId)
+                    owner: new mongoose.Types.ObjectId(ownerFilter)
                 }
             }
         )
@@ -81,25 +83,32 @@ const getAllVideos = asyncHandler(async (req,res)=>{
                 localField:"owner",
                 foreignField:"_id",
                 as:"owner",
-                
-
-            },
-            
+                pipeline:[
+                    {
+                        $project:{
+                            _id:1,
+                            username:1,
+                            fullname:1,
+                            avatar:1
+                        }
+                    }
+                ]
+            }
         },
         {
-                $addFields:{
-                    owner:{
-                        $first:"$owner"
-                    }
+            $addFields:{
+                owner:{
+                    $first:"$owner"
                 }
-     }
+            }
+        }
     )
 
     const videos = await Video.aggregatePaginate(
         Video.aggregate(pipeline),options
     )
 
-if(videos.docs.length === 0) throw new ApiError(404,"videos not found or server not responds")
+if(videos.docs.length === 0) return res.status(200).json(new ApiResponse(200, { docs: [], totalDocs: 0, totalPages: 0, page: 1 }, "No videos found"))
 
 return res.status(200).json(new ApiResponse(200,videos,"video fetched successfully"))
     
@@ -133,8 +142,6 @@ const publishVideo = asyncHandler( async(req,res)=>{
     })
 
     if(!videoResponse) throw new ApiError(500,'database not response for video published')
-        console.log(videoResponse);
-        
 
     return res.status(200).json(new ApiResponse(200,videoResponse,"files uploaded successfully"))
     
@@ -204,6 +211,16 @@ const getVideoById = asyncHandler(async (req, res) => {
 
     if (video.length === 0) {
         throw new ApiError(404, "Video not found");
+    }
+
+    // increment views
+    await Video.findByIdAndUpdate(videoId, { $inc: { views: 1 } })
+
+    // add to watch history if user is logged in
+    if (req.user?._id) {
+        await User.findByIdAndUpdate(req.user._id, {
+            $addToSet: { watchHistory: videoId }
+        })
     }
 
     return res.status(200).json(

@@ -8,18 +8,11 @@ export default function Button({
     ...props
 }) {
     const variants = {
-        primary:
-            "bg-blue-600 hover:bg-blue-700 w-full text-white",
-
-        secondary:
-            "bg-zinc-200 text-black hover:bg-zinc-300 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700",
-
-        danger:
-            "bg-red-600 hover:bg-red-700 text-white",
-
-        ghost:
-            "text-zinc-900 hover:bg-zinc-100 dark:text-white dark:hover:bg-zinc-800",
-    };
+        primary: "bg-blue-600 hover:bg-blue-700 text-white",
+        secondary: "bg-zinc-100 text-zinc-900 hover:bg-zinc-200 border border-zinc-300 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700 dark:border-zinc-700",
+        danger: "bg-red-600 hover:bg-red-700 text-white",
+        ghost: "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white",
+    }
 
     return (
         <button
@@ -27,15 +20,11 @@ export default function Button({
             onClick={onClick}
             disabled={disabled}
             className={`
-                w-full
-                rounded-lg
-                px-4
-                whitespace-nowrap
-                py-2.5
-                font-medium
+                inline-flex items-center justify-center
+                rounded-lg px-4 py-2.5
+                text-sm font-medium whitespace-nowrap
                 transition
-                disabled:cursor-not-allowed
-                disabled:opacity-60
+                disabled:cursor-not-allowed disabled:opacity-60
                 ${variants[variant]}
                 ${className}
             `}
@@ -43,5 +32,5 @@ export default function Button({
         >
             {children}
         </button>
-    );
+    )
 }

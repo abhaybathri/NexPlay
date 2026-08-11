@@ -52,15 +52,46 @@ const getVideoComment = asyncHandler(async (req,res)=>{
                             from:"users",
                             localField:"owner",
                             foreignField:"_id",
-                            as:"owner"
+                            as:"owner",
+                            pipeline:[
+                                {
+                                    $project:{
+                                        _id:1,
+                                        username:1,
+                                        avatar:1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        $lookup:{
+                            from:"likes",
+                            localField:"_id",
+                            foreignField:"comment",
+                            as:"likes"
                         }
                     },
                     {
                         $addFields:{
-                            owner:{
-                                $first:"$owner"
+                            owner:{ $first:"$owner" },
+                            likesCount:{ $size:"$likes" },
+                            isLikedByUser:{
+                                $cond:{
+                                    if: req.user?._id
+                                        ? { $in:[new mongoose.Types.ObjectId(req.user._id), "$likes.likedBy"] }
+                                        : false,
+                                    then: true,
+                                    else: false
+                                }
                             }
                         }
+                    },
+                    {
+                        $project:{ likes: 0 }
+                    },
+                    {
+                        $sort:{ createdAt: -1 }
                     }
                 ]
             ),

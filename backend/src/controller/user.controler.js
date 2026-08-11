@@ -1,11 +1,10 @@
-import { ApiError } from "../utility/ApiError.js";
-import {ApiResponse} from "../utility/ApiResponse.js"
-import { asyncHandler } from "../utility/asyncHandler.js";
-import {User} from '../models/user.models.js'
+import { ApiError } from "../utility/ApiError.js"
+import { ApiResponse } from "../utility/ApiResponse.js"
+import { asyncHandler } from "../utility/asyncHandler.js"
+import { User } from '../models/user.models.js'
 import uploadOnCloudinary from '../utility/uploadOnCloudinary.js'
-import { pipeline } from "stream";
 import jwt from 'jsonwebtoken'
-import mongoose from "mongoose";
+import mongoose from "mongoose"
 
 const generateTokens = async function(id){
     try {
@@ -14,8 +13,6 @@ const generateTokens = async function(id){
     
         const accessToken = user.generateAccessToken()
         const refreshToken = user.generateRefreshToken()
-    
-        console.log("tokens generate successfully");
     
         user.refreshToken = refreshToken
         await user.save({validateBeforeSave:false})
@@ -44,20 +41,15 @@ const createUser = asyncHandler(async function(req,res){
     if(existUser) throw new ApiError(401,"user already exist with this email or username")
 
     const avatarLocalPath = req.files?.avatar[0]?.path
-    if(!avatarLocalPath) throw new ApiError(401,"cover image is necessary")
+    if(!avatarLocalPath) throw new ApiError(401,"Avatar image is required")
         
-    const coverImageLocalPath = req.files.coverImage[0]?.path
-    console.log("cover image local path is " , coverImageLocalPath);
+    const coverImageLocalPath = req.files?.coverImage?.[0]?.path
 
-    const avatar = await uploadOnCloudinary(avatarLocalPath);
-    console.log(avatar);
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
     
+    const coverImage = coverImageLocalPath ? await uploadOnCloudinary(coverImageLocalPath) : null
 
-    
-    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
-    
-
-    if(!avatar) throw new ApiError(500,"something went wrong ::: avatar image not upload into server")
+    if(!avatar) throw new ApiError(500,"Avatar image upload failed")
 
     const user = await User.create(
         {
@@ -66,14 +58,13 @@ const createUser = asyncHandler(async function(req,res){
             email,
             password,
             avatar:avatar.url,
-            coverImage : coverImage.url || ""
+            coverImage: coverImage?.url || ""
         }
     )
 
     if(!user) throw new ApiError(500,'database not respond , user create failed')
 
     const createdUser = await User.findOne(user._id).select("-password -refreshToken")
-console.log(createdUser);
 
     return res.status(200)
     .json(
@@ -191,8 +182,8 @@ const updatePassword = asyncHandler( async function(req,res){
     const user = await User.findById(req.user._id)
     if(!user) throw new ApiError(404,"user not logged in")
 
-    const correctPass =  user.isPasswordCorrect(oldpass);
-    if(!correctPass) throw new ApiError(404,"password does not match with old password")
+    const correctPass = await user.isPasswordCorrect(oldpass);
+    if(!correctPass) throw new ApiError(400,"Current password is incorrect")
 
     user.password = newpass
     user.save({validateBeforeSave:false})
@@ -254,7 +245,7 @@ const updateCoverImage = asyncHandler( async function(req,res){
 
 })
 
-const getChannelProfile = (async(req,res)=>{
+const getChannelProfile = asyncHandler(async(req,res)=>{
     const {username} = req.params
 
     if(!username) throw new ApiError(404,"channel not found")
@@ -291,11 +282,16 @@ const getChannelProfile = (async(req,res)=>{
                 },
                 isSubscribed:{
                     $cond: {
-                        if:{ $in:[req.user?._id,"$subscribers.subscriber"]},
-                        then:true,
-                        else:false
-                        }
+                        if:{
+                            $and: [
+                                { $gt: [{ $ifNull: [req.user?._id, null] }, null] },
+                                { $in: [req.user?._id, "$subscribers.subscriber"] }
+                            ]
+                        },
+                        then: true,
+                        else: false
                     }
+                }
                 }
             
         },

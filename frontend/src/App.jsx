@@ -1,42 +1,36 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import { CategoryTabs, Header } from './components/index.js'
-import { AllVideos, Home } from './pages/index.js'
-import { Outlet } from 'react-router-dom'
-import { api } from './api/axios.js'
-import { useDispatch } from 'react-redux'
 import { useEffect } from 'react'
+import { Outlet } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import { api } from './api/axios.js'
 import { login, logout } from './store/authSlice.js'
+import { Header } from './components/index.js'
 
 function App() {
-  const [count, setCount] = useState(0)
-    const dispatch = useDispatch();
+    const dispatch = useDispatch()
 
-  useEffect(() => {
-    const checkAuth = async () => {
-        try {
-            const { data } = await api.get("/users/user");
+    useEffect(() => {
+        // silently check if user is already logged in via cookie
+        api.get("/users/user")
+            .then(({ data }) => dispatch(login({ userData: data.data })))
+            .catch(() => dispatch(logout())) // expected when not logged in
+    }, [dispatch])
 
-
-            dispatch(login(data.data));
-        } catch (err) {
-            console.log("Error:", err.response?.data || err.message);
-            dispatch(logout());
-        }
-    };
-
-    checkAuth();
-}, []);
-
-  return (
-    <>
-    <Header />
-    <Outlet />    
-        
-    </>
-  )
+    return (
+        <div className="min-h-screen bg-white text-zinc-900 dark:bg-zinc-950 dark:text-white">
+            <Header />
+            <main>
+                <Outlet />
+            </main>
+            <ToastContainer
+                position="bottom-right"
+                autoClose={3000}
+                theme="dark"
+                toastClassName="!rounded-xl !text-sm"
+            />
+        </div>
+    )
 }
 
 export default App

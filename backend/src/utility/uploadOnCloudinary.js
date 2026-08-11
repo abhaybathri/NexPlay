@@ -1,35 +1,41 @@
 import { v2 as cloudinary } from 'cloudinary'
 import fs from 'fs'
 
+// Configure lazily so env vars are loaded by the time this runs
+function getCloudinary() {
+    cloudinary.config({
+        cloud_name: process.env.CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET
+    })
+    return cloudinary
+}
 
-
-
-const uploadOnCloudinary = async (localPath)=>{
-  console.log(process.env.CLOUD_NAME, process.env.CLOUDINARY_API_KEY);
+const uploadOnCloudinary = async (localPath) => {
     try {
-      if(!localPath) return null
-      cloudinary.config({ 
-  cloud_name: process.env.CLOUD_NAME, 
-  api_key: process.env.CLOUDINARY_API_KEY, 
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
-        const response = await cloudinary.uploader
-      .upload(localPath,{
-        resource_type:"auto"
-      })
-        fs.unlinkSync(localPath)
+        if (!localPath) return null
 
-      
-      console.log("File uploaded successfully:", response.url);
-    
-      return response
+        const response = await getCloudinary().uploader.upload(localPath, {
+            resource_type: "auto"
+        })
+
+        if (fs.existsSync(localPath)) fs.unlinkSync(localPath)
+        return response
     } catch (error) {
-        fs.unlinkSync(localPath)
-        console.log(process.env.CLOUDINARY_API_SECRET);
-        
-        console.log("file upload fail",error);
-        console.log(process.env.CLOUDINARY_API_KEY)
+        if (fs.existsSync(localPath)) fs.unlinkSync(localPath)
+        console.error("Cloudinary upload failed:", error.message)
         return null
     }
 }
+
+export const deleteFromCloudinary = async (publicId, resourceType = "image") => {
+    try {
+        if (!publicId) return null
+        return await getCloudinary().uploader.destroy(publicId, { resource_type: resourceType })
+    } catch (error) {
+        console.error("Cloudinary delete failed:", error.message)
+        return null
+    }
+}
+
 export default uploadOnCloudinary
